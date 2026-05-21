@@ -14,11 +14,14 @@
  */
 void gpio_enable_clock(uint32_t port_base)
 {
+    volatile uint32_t *rcc_ahb1enr = (volatile uint32_t *)(0x40023800 + 0x30); // &RCC_AHB1ENR
     if (port_base == GPIOB_BASE) {
         /* TODO: set RCC_AHB1ENR_GPIOBEN */
+        *rcc_ahb1enr |= RCC_AHB1ENR_GPIOBEN;
 
     } else if (port_base == GPIOC_BASE) {
         /* TODO: set RCC_AHB1ENR_GPIOCEN */
+        *rcc_ahb1enr |= RCC_AHB1ENR_GPIOCEN;
 
     }
 }
@@ -40,7 +43,11 @@ void gpio_config_input(uint32_t port_base, uint8_t pin)
 {
     /* TODO: clear the MODER field for this pin */
 
+    volatile uint32_t *moder = (volatile uint32_t *)(port_base + 0x00); // GPIOx_MODER
+    *moder &= ~(3U << (pin * 2));
+
     /* TODO: write GPIO_MODER_INPUT into those bits */
+    *moder |= (0U << (pin * 2));
 }
 
 /*
@@ -57,7 +64,11 @@ void gpio_config_output(uint32_t port_base, uint8_t pin)
 {
     /* TODO: clear the MODER field for this pin */
 
+    volatile uint32_t *moder = (volatile uint32_t *)(port_base + 0x00); // GPIOx_MODER
+    *moder &= ~(3U << (pin * 2));
+
     /* TODO: write GPIO_MODER_OUTPUT into those bits */
+    *moder |= (1U << (pin * 2));
 }
 
 /*
@@ -72,7 +83,8 @@ void gpio_config_output(uint32_t port_base, uint8_t pin)
 int gpio_read(uint32_t port_base, uint8_t pin)
 {
     /* TODO: return the value of bit 'pin' from IDR */
-    return 0;
+    volatile uint32_t *idr = (volatile uint32_t *)(port_base + 0x10); // GPIOx_IDR
+    return (*idr >> pin) & 1U;
 }
 
 /*
@@ -90,8 +102,11 @@ void gpio_write(uint32_t port_base, uint8_t pin, int value)
 {
     if (value) {
         /* TODO: set — write to BSRR to drive the pin high */
-
+        volatile uint32_t *bsrr = (volatile uint32_t *)(port_base + 0x18); // GPIOx_BSRR
+        *bsrr = (1U << pin);
     } else {
         /* TODO: reset — write to BSRR to drive the pin low */
+        volatile uint32_t *bsrr = (volatile uint32_t *)(port_base + 0x18); // GPIOx_BSRR
+        *bsrr = (1U << (pin + 16));
     }
 }

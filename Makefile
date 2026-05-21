@@ -51,6 +51,10 @@ HEX = $(BUILDDIR)/$(TARGET).hex
 #         Example: SRCS = src/foo.c src/bar.c
 SRCS = src/gpio.c src/main.c
 
+# SOLUCIÓN AL ERROR: Make evalúa las dependencias en una primera pasada. 
+# Movemos OBJS aquí para que P1.7 sepa de qué depende $(ELF).
+OBJS = $(SRCS:$(SRCDIR)/%.c=$(BUILDDIR)/%.o)
+
 # Assembly startup — provided, do not change.
 ASM_SRC = startup/startup_stm32f412zg.s
 
@@ -85,15 +89,14 @@ $(ASM_OBJ): $(ASM_SRC) | $(BUILDDIR)
 #         Recipe:       $(CC) $(CFLAGS) -c $< -o $@
 #
 # YOUR RULE HERE
-#$(BUILDDIR)/gpio.o: src/gpio.c | $(BUILDDIR)
-#	$(CC) $(CFLAGS) -c $< -o $@
+# BORRADO EN PHASE 2
+
 
 # P1.6 — Compile src/main.c into output/main.o  (explicit rule).
 #         Same form as P1.5 but for main.c.
 #
 # YOUR RULE HERE
-#$(BUILDDIR)/main.o: src/main.c | $(BUILDDIR)
-#	$(CC) $(CFLAGS) -c $< -o $@
+# BORRADO EN PHASE 2
 
 
 # P1.7 — Link all objects into the ELF.
@@ -105,6 +108,7 @@ $(ASM_OBJ): $(ASM_SRC) | $(BUILDDIR)
 # YOUR RULE HERE
 $(ELF): $(OBJS) $(ASM_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^
+
 
 # P1.8 — Produce the binary and hex files from the ELF.
 #         $(BIN) rule: $(OBJCOPY) -O binary $< $@
@@ -131,7 +135,7 @@ $(HEX): $(ELF)
 # P2.1 — Derive OBJS from SRCS using a substitution reference.
 #         Replace the src/%.c pattern with output/%.o
 #         Hint: $(SRCS:$(SRCDIR)/%.c=$(BUILDDIR)/%.o)
-OBJS = $(SRCS:$(SRCDIR)/%.c=$(BUILDDIR)/%.o)
+# OBJS = ... (Movido arriba para corregir el orden de evaluación)
 
 # P2.2 — Replace the two explicit C rules with one static pattern rule.
 #         Steps (do them together before running make — having both the explicit
@@ -139,7 +143,6 @@ OBJS = $(SRCS:$(SRCDIR)/%.c=$(BUILDDIR)/%.o)
 #           1. Delete the explicit rules P1.5 and P1.6 above.
 #           2. Write the pattern rule below.
 #           3. Update P1.7 to list $(OBJS) instead of the two hardcoded paths.
-#           4. Run make — output should be identical to Phase 1.
 #
 #         Form:
 #           $(OBJS): $(BUILDDIR)/%.o : $(SRCDIR)/%.c | $(BUILDDIR)
@@ -158,19 +161,22 @@ $(OBJS): $(BUILDDIR)/%.o : $(SRCDIR)/%.c | $(BUILDDIR)
 #         Recipe: rm -rf $(BUILDDIR)
 #
 # YOUR RULE HERE
-
+clean:
+	rm -rf $(BUILDDIR)
 
 # P3.2 — "size": depends on $(ELF), prints the firmware size.
 #         Recipe: $(SIZE) $<
 #
 # YOUR RULE HERE
-
+size: $(ELF)
+	$(SIZE) $<
 
 # P3.3 — "flash": depends on $(ELF), programs the board.
 #         Recipe: bash scripts/flash.sh
 #
 # YOUR RULE HERE
-
+flash: $(ELF)
+	bash scripts/flash.sh
 
 # --- Help (provided — do not change) -----------------------------------------
 help:
@@ -187,3 +193,4 @@ help:
 #         List: all clean flash size help
 #
 # YOUR LINE HERE
+.PHONY: all clean flash size help
